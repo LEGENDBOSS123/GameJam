@@ -1,9 +1,19 @@
+import Box from "./Box.mjs";
 import Circle from "./Circle.mjs";
+import SoundManager from "./SoundManager.mjs";
 import Stick from "./Stick.mjs";
 import World from "./World.mjs";
+import Level1 from "./Level1.mjs";
+import Vector2 from "./Vector2.mjs";
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+const soundManager = new SoundManager();
+soundManager.addSounds({
+    "explosion": "explosion.mov",
+})
+
 
 let tps = 60;
 let deltaTime = 1000 / tps;
@@ -16,73 +26,76 @@ let lastSecondTime = 0;
 let pageOutTime = 0;
 let pageOutDuration = 0;
 
+let currentZoom = 1.0;
+const ZOOM_FACTOR = 1.1;
 
-let player = new Circle([canvas.width / 2, canvas.height / 2]);
-const world = new World();
 
-let playerBalls = [
-    player,
-    new Circle([canvas.width / 2, canvas.height / 2 + 20]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 40]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 60]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 80]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 100]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 120]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 140]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 160]),
-    new Circle([canvas.width / 2, canvas.height / 2 + 180], true),
-]
+function screenToWorld(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = clientX - rect.left; // X relative to canvas element
+    const canvasY = clientY - rect.top; // Y relative to canvas element
 
-playerBalls.forEach(e => world.add(e));
-for (let i = 0; i < playerBalls.length - 1; i++) {
-    world.add(new Stick(playerBalls[i].id, playerBalls[i + 1].id, Circle.radius * 2));
+    const worldX = (canvasX - cameraX) / currentZoom;
+    const worldY = (canvasY - cameraY) / currentZoom;
+    return [worldX, worldY];
 }
 
-
-
-const cols = 800 / (Circle.radius * 2); // 40
-const rows = 600 / (Circle.radius * 2); // 30
-
-
-// border
-const padding = 2;
-
-for (let i = 0; i < cols; i++) {
-    for (let j = 0; j < rows; j++) {
-        if (i >= padding && i < cols - padding &&
-            j >= padding && j < rows - padding) {
-            continue;
-        }
-
-        const x = i * Circle.radius * 2 + Circle.radius;
-        const y = j * Circle.radius * 2 + Circle.radius;
-
-        world.add(new Circle([x, y], true));
+// selected shape handler
+let selectedShape = "";
+let lastShape = null;
+let mouse = [0, 0];
+document.getElementById("boxTypeBtn").addEventListener("click", function () {
+    selectedShape = "box";
+})
+document.getElementById("circleTypeBtn").addEventListener("click", function () {
+    selectedShape = "circle";
+})
+document.getElementById("stickTypeBtn").addEventListener("click", function () {
+    selectedShape = "stick";
+    lastShape = null;
+})
+canvas.addEventListener("click", function (event) {
+    mouse = [event.clientX, event.clientY];
+    if (selectedShape == "circle") {
+        world.add(new Circle(screenToWorld(event.clientX, event.clientY), document.getElementById("isStaticInput").checked, [0, 0.0001]));
     }
-}
-
-
-
-const keys = {};
-document.addEventListener('keydown', function (event) {
-    keys[event.key] = true;
-});
-document.addEventListener('keyup', function (event) {
-    keys[event.key] = false;
+    else if(selectedShape == "stick"){
+        if(lastShape == null){
+            const c = new Circle(screenToWorld(event.clientX, event.clientY), document.getElementById("isStaticInput").checked);
+            world.add(c);
+            lastShape = c.id;
+        }
+        else{
+            const c = new Circle(screenToWorld(event.clientX, event.clientY), document.getElementById("isStaticInput").checked);
+            world.add(c);
+            world.add(new Stick(lastShape, c.id, Vector2.distanceArrays(
+                world.all[lastShape].position,
+                world.all[c.id].position
+            )));
+            lastShape = c.id;
+        }
+    }
 })
 
-const drawText = function (color, font, text, x, y, ctx) {
-    ctx.fillStyle = color;
-    ctx.font = font;
-    ctx.fillText(text, x, y);
-}
-const draw = function () {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    world.draw(ctx);
-    drawText("black", "14px Arial", "FPS: " + Math.round(fps), 10, 20, ctx);
-}
 
 
+let cameraX = 0;
+let cameraY = 0;
+
+const cameraSmoothness = 1;
+
+
+
+//zoom in
+document.getElementById("zoomInBtn").addEventListener("click", function () {
+    currentZoom *= ZOOM_FACTOR;
+})
+document.getElementById("zoomOutBtn").addEventListener("click", function () {
+    currentZoom /= ZOOM_FACTOR;
+})
+
+
+// visibility handler
 document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
         pageOutTime = performance.now();
@@ -93,10 +106,68 @@ document.addEventListener('visibilitychange', function () {
 });
 
 
+
+// key handler
+const keys = {};
+document.addEventListener('keydown', function (event) {
+    keys[event.key] = true;
+});
+document.addEventListener('keyup', function (event) {
+    keys[event.key] = false;
+})
+
+
+
+
+let player = new Circle([canvas.width / 2, canvas.height / 2]);
+const world = new World();
+
+top.world = world;
+
+let playerBalls = [
+    player
+]
+
+playerBalls.forEach(e => world.add(e));
+for (let i = 0; i < playerBalls.length - 1; i++) {
+    world.add(new Stick(playerBalls[i].id, playerBalls[i + 1].id, Circle.radius * 2));
+}
+
+
+world.parseJSON(Level1);
+
+
+
+
+const drawText = function (color, font, text, x, y, ctx) {
+    ctx.fillStyle = color;
+    ctx.font = font;
+    ctx.fillText(text, x, y);
+}
+
+
+const draw = function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const targetCameraX = canvas.width / 2 - player.position[0] * currentZoom;
+    const targetCameraY = canvas.height / 2 - player.position[1] * currentZoom;
+    cameraX += (targetCameraX - cameraX) * cameraSmoothness;
+    cameraY += (targetCameraY - cameraY) * cameraSmoothness;
+    ctx.save();
+    ctx.translate(cameraX, cameraY);
+    ctx.scale(currentZoom, currentZoom);
+    world.draw(ctx);
+
+    ctx.restore();
+    drawText("black", "14px Arial", "FPS: " + Math.round(fps), 10, 20, ctx);
+}
+
+
+
 const update = function () {
     const accel = 0.0001;
     player.acceleration[0] = keys["ArrowLeft"] ? -accel : keys["ArrowRight"] ? accel : 0;
-    player.acceleration[1] = keys["ArrowUp"] ? -accel : keys["ArrowDown"] ? accel : accel;
+    player.acceleration[1] = keys["ArrowUp"] ? -accel : keys["ArrowDown"] ? accel : 0;
 
     if (keys["r"]) {
         player.position[0] = canvas.width / 2;

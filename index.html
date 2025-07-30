@@ -8,6 +8,25 @@
 </head>
 <body>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div id="editorControls">
+        <div>
+            <h3>Object Type</h3>
+            <button id="boxTypeBtn">Box</button>
+            <button id="circleTypeBtn">Circle</button>
+            <button id="stickTypeBtn">Stick</button>
+            <h3 style="color:white">Is Static?</h3>
+            <input id="isStaticInput" type="checkbox" name="isStatic" value="true">
+        </div>
+
+        <div>
+            <h3>Zoom</h3>
+            <button id="zoomInBtn">Zoom In</button>
+            <button id="zoomOutBtn">Zoom Out</button>
+        </div>
+
+        </div>
+
     <script src="main.mjs" type="module"></script>
 </body>
 </html>

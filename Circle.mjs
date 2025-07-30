@@ -1,3 +1,4 @@
+import Box from "./Box.mjs";
 import Vector2 from "./Vector2.mjs"
 
 export default class Circle {
@@ -33,6 +34,9 @@ export default class Circle {
     }
 
     doCollisionWith(circle) {
+        if(circle instanceof Box){
+            return circle.doCollisionWith(this);
+        }
         if(circle.isStatic && this.isStatic){
             return false;
         }
@@ -66,6 +70,21 @@ export default class Circle {
         circle.position[1] -= normal[1] * overlap * (1 - massRatio) * relax;
 
         return true;
+    }
+
+
+    toJSON(){
+        return {
+            position: this.position,
+            isStatic: this.isStatic,
+            radius: this.radius
+        }
+    }
+
+    static fromJSON(json){
+        const circle = new Circle(json.position, json.isStatic);
+        circle.radius = json.radius;
+        return circle;
     }
 
 }

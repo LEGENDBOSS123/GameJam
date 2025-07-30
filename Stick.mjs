@@ -31,4 +31,25 @@ export default class Stick {
         circle2.position[0] += correction[0] * (1 - massRatio);
         circle2.position[1] += correction[1] * (1 - massRatio);
     }
+
+
+    draw(ctx, world) {
+        ctx.beginPath();
+        ctx.moveTo(world.all[this.id1].position[0], world.all[this.id1].position[1]);
+        ctx.lineTo(world.all[this.id2].position[0], world.all[this.id2].position[1]);
+        ctx.strokeStyle = "white";
+        ctx.stroke();
+    }
+
+    toJSON(){
+        return {
+            id1: this.id1,
+            id2: this.id2,
+            distance: this.distance
+        }
+    }
+
+    static fromJSON(json){
+        return new Stick(json.id1, json.id2, json.distance);
+    }
 }

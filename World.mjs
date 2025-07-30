@@ -1,3 +1,4 @@
+import Box from "./Box.mjs";
 import Circle from "./Circle.mjs";
 import Hashmap from "./Hashmap.mjs";
 import Stick from "./Stick.mjs";
@@ -12,6 +13,7 @@ export default class World {
         this.hashmap = new Hashmap();
         this.staticHashMap = new Hashmap();
         this.pairs = new Map();
+        this.boxes = [];
     }
 
     addPair(circle1, circle2, _this) {
@@ -25,19 +27,21 @@ export default class World {
 
     add(obj) {
         obj.id = this.maxId++;
+        this.all[obj.id] = obj;
         if (obj instanceof Circle) {
             this.circles.push(obj);
-            this.all[obj.id] = obj;
         }
         else if (obj instanceof Stick) {
             this.sticks.push(obj);
-            this.all[obj.id] = obj
+        }
+        else if (obj instanceof Box) {
+            this.boxes.push(obj);
         }
     }
 
     draw(ctx) {
-        for (let i = 0; i < this.circles.length; i++) {
-            this.circles[i].draw(ctx);
+        for(let id in this.all){
+            this.all[id].draw(ctx, this);
         }
     }
 
@@ -46,7 +50,7 @@ export default class World {
         for (let i = 0; i < this.circles.length; i++) {
             this.circles[i].step(deltaTime);
         }
-        for(let i = 0; i < this.sticks.length; i++){
+        for (let i = 0; i < this.sticks.length; i++) {
             this.sticks[i].step(this);
         }
         for (let i = 0; i < this.circles.length; i++) {
@@ -68,8 +72,52 @@ export default class World {
             this.staticHashMap.query(this.circles[i], this.addPair, this);
         }
 
+        for(let i = 0; i < this.boxes.length; i++){
+            for(let j = 0; j < this.circles.length;j++){
+                const c = this.circles[j];
+                const b = this.boxes[i];
+                if(c.isStatic){
+                    continue;
+                }
+                this.addPair(c, b, this)
+            }
+        }
+
         for (let [key, value] of this.pairs) {
             value[0].doCollisionWith(value[1]);
+        }
+    }
+
+
+    toJSON(){
+        const json = {
+            circles: [],
+            sticks: [],
+            boxes: []
+        };
+
+        for(let i = 0; i < this.circles.length; i++){
+            json.circles.push(this.circles[i].toJSON());
+        }
+        for(let i = 0; i < this.sticks.length; i++){
+            json.sticks.push(this.sticks[i].toJSON());
+        }
+        for(let i = 0; i < this.boxes.length; i++){
+            json.boxes.push(this.boxes[i].toJSON());
+        }
+
+        return json;
+    }
+
+    parseJSON(json){
+        for(let i = 0; i < json.circles.length; i++){
+           this.add(Circle.fromJSON(json.circles[i]));
+        }
+        for(let i = 0; i < json.boxes.length; i++){
+            this.add(Box.fromJSON(json.boxes[i]));
+        }
+        for(let i = 0; i < json.sticks.length; i++){
+            this.add(Stick.fromJSON(json.sticks[i]));
         }
     }
 }
