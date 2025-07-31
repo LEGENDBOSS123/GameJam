@@ -170,7 +170,8 @@ const world = new World();
 top.world = world;
 
 let playerBalls = [
-    player
+    player,
+    // new Circle([canvas.width / 2, canvas.height / 2 + 20], false),
 ]
 
 playerBalls.forEach(e => world.add(e));
@@ -260,9 +261,22 @@ const draw = function () {
 
 
 const update = function () {
-    const accel = 0.0001;
-    player.acceleration[0] = keys["ArrowLeft"] ? -accel : keys["ArrowRight"] ? accel : 0;
-    player.acceleration[1] = keys["ArrowUp"] ? -accel : keys["ArrowDown"] ? accel : accel;
+    player.acceleration[1] = 0.0001;
+    if(keys["ArrowUp"] && player.canJump){
+        player.canJump = false;
+        player.position[1] -= 3;
+    }
+    player.acceleration[0] = 0;
+    if(keys["ArrowRight"]){
+        if(player.position[0] - player.lastPosition[0] < 2){
+            player.acceleration[0] = 0.0001
+        }
+    }
+    if(keys["ArrowLeft"]){
+        if(player.position[0] - player.lastPosition[0] > -2){
+            player.acceleration[0] = -0.0001
+        }
+    }
 
     if (keys["r"]) {
         player.position[0] = canvas.width / 2;

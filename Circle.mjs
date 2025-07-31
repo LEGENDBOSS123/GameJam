@@ -12,6 +12,7 @@ export default class Circle {
         this.changed = isStatic;
         this.radius = Circle.radius;
         this.mass = mass;
+        this.canJump = false;
     }
 
     draw(world, options) {
@@ -69,6 +70,13 @@ export default class Circle {
         this.position[1] += normal[1] * overlap * massRatio * relax;
         circle.position[0] -= normal[0] * overlap * (1 - massRatio) * relax;
         circle.position[1] -= normal[1] * overlap * (1 - massRatio) * relax;
+
+        if(normal[1] > 0.8){
+            circle.canJump = true;
+        }
+        else if(normal[1] < -0.8){
+            this.canJump = true;
+        }
 
         return true;
     }

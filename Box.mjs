@@ -40,7 +40,6 @@ export default class Box {
         }
 
         if (distanceSquared === 0) {
-            const overlap = circle.radius;
             circle.position[1] = this.y - circle.radius;
             return true;
         }
@@ -54,6 +53,10 @@ export default class Box {
 
         circle.position[0] += normalX * overlap;
         circle.position[1] += normalY * overlap;
+
+        if(normalY < -0.8){
+            circle.canJump = true;
+        }
 
         return true;
     }
