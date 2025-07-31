@@ -33,7 +33,8 @@ export default class Stick {
     }
 
 
-    draw(ctx, world) {
+    draw(world, options) {
+        const ctx = options.ctx;
         ctx.beginPath();
         ctx.moveTo(world.all[this.id1].position[0], world.all[this.id1].position[1]);
         ctx.lineTo(world.all[this.id2].position[0], world.all[this.id2].position[1]);

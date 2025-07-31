@@ -5,14 +5,24 @@ import Stick from "./Stick.mjs";
 import World from "./World.mjs";
 import Level1 from "./Level1.mjs";
 import Vector2 from "./Vector2.mjs";
+import TextureLoader from "./TextureLoader.mjs";
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
+// ctx.imageSmoothingEnabled = false;
 const soundManager = new SoundManager();
-soundManager.addSounds({
+await soundManager.addSounds({
     "explosion": "explosion.mov",
 })
+
+const textureLoader = new TextureLoader();
+await textureLoader.addImages({
+    "floor": "floor.png",
+    "bg1": "background.png",
+    "bgday": "backgroundDay.png",
+    "stone": "stone.png",
+})
+
 
 
 let tps = 60;
@@ -46,6 +56,7 @@ let lastShape = null;
 let mouse = [0, 0];
 document.getElementById("boxTypeBtn").addEventListener("click", function () {
     selectedShape = "box";
+    lastShape = null;
 })
 document.getElementById("circleTypeBtn").addEventListener("click", function () {
     selectedShape = "circle";
@@ -59,23 +70,56 @@ canvas.addEventListener("click", function (event) {
     if (selectedShape == "circle") {
         world.add(new Circle(screenToWorld(event.clientX, event.clientY), document.getElementById("isStaticInput").checked, [0, 0.0001]));
     }
-    else if(selectedShape == "stick"){
-        if(lastShape == null){
-            const c = new Circle(screenToWorld(event.clientX, event.clientY), document.getElementById("isStaticInput").checked);
-            world.add(c);
-            lastShape = c.id;
+    else if (selectedShape == "stick") {
+        if (lastShape == null) {
+            const c = new Circle(screenToWorld(event.clientX, event.clientY), true);
+            lastShape = c;
         }
-        else{
-            const c = new Circle(screenToWorld(event.clientX, event.clientY), document.getElementById("isStaticInput").checked);
-            world.add(c);
-            world.add(new Stick(lastShape, c.id, Vector2.distanceArrays(
-                world.all[lastShape].position,
-                world.all[c.id].position
-            )));
-            lastShape = c.id;
+        else {
+            const pos = screenToWorld(event.clientX, event.clientY);
+            const diff = Vector2.subtractArrays(pos, lastShape.position);
+            const mag = Math.sqrt(Vector2.magnitudeSquaredArray(diff));
+            const number = Math.floor(mag / 20);
+            const circles = [];
+            for (let i = 0; i < number; i++) {
+                const c = new Circle(Vector2.addArrays(lastShape.position, Vector2.scaleArray(diff, i / number)), (i == number - 1 && document.getElementById("isStaticInput").checked) || i == 0, [0, 0.0001], 0.2);
+                circles.push(c);
+                world.add(c);
+            }
+            for (let i = 0; i < circles.length - 1; i++) {
+                world.add(new Stick(circles[i].id, circles[i + 1].id,
+                    10//Math.sqrt(Vector2.magnitudeSquaredArray(Vector2.subtractArrays(circles[i].position, circles[i + 1].position)))
+                ));
+            }
+
+            lastShape = null;
+
+        }
+    }
+    else if (selectedShape == "box") {
+        if (lastShape == null) {
+            lastShape = screenToWorld(event.clientX, event.clientY);
+        }
+        else {
+            let pattern = "floor";
+            if (document.getElementById("floor").checked) {
+                pattern = "floor";
+            }
+            else if (document.getElementById("stone").checked) {
+                pattern = "stone";
+            }
+
+            world.add(new Box(lastShape[0],
+                lastShape[1],
+                screenToWorld(event.clientX, event.clientY)[0] - lastShape[0],
+                screenToWorld(event.clientX, event.clientY)[1] - lastShape[1],
+                pattern
+            ));
+            lastShape = null;
         }
     }
 })
+
 
 
 
@@ -120,6 +164,7 @@ document.addEventListener('keyup', function (event) {
 
 
 let player = new Circle([canvas.width / 2, canvas.height / 2]);
+player.mass = 2;
 const world = new World();
 
 top.world = world;
@@ -145,18 +190,68 @@ const drawText = function (color, font, text, x, y, ctx) {
     ctx.fillText(text, x, y);
 }
 
+function createScaledImageCanvas(image, scale) {
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = image.width * scale;
+    tempCanvas.height = image.height * scale;
+
+    tempCtx.imageSmoothingEnabled = false;
+
+    tempCtx.drawImage(image, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    return tempCanvas;
+}
+
+
+const backgroundImage1 = createScaledImageCanvas(textureLoader.getImage("bg1"), 600 / 128);
+const backgroundImage2 = createScaledImageCanvas(textureLoader.getImage("bgday"), 600 / 128);
+
+function drawBackground(xOffset, img) {
+    const imageWidth = img.width;
+    const imageHeight = img.height;
+
+    // Calculate the effective X position for drawing the background.
+    // The modulo operator ensures the position wraps around the image's width,
+    // creating a seamless loop.
+    // Adding imageWidth before the second modulo handles negative offsets correctly.
+    let drawX = (xOffset % imageWidth + imageWidth) % imageWidth;
+
+    // To ensure the entire viewport is covered, we draw multiple copies of the image.
+    // We start by drawing the image at its calculated `drawX`.
+    // Then, we draw copies to the left and right as needed to fill the screen.
+    // This loop ensures coverage regardless of imageWidth vs viewportWidth.
+    let currentDrawX = drawX - imageWidth; // Start one image to the left for seamless wrapping
+
+    while (currentDrawX < 800) {
+        ctx.drawImage(img, currentDrawX, 0, imageWidth+2, imageHeight);
+        currentDrawX += imageWidth;
+    }
+
+}
+const floorPattern = ctx.createPattern(createScaledImageCanvas(textureLoader.getImage("floor"), 8), 'repeat');
+const stonePattern = ctx.createPattern(createScaledImageCanvas(textureLoader.getImage("stone"), 8), 'repeat');
 
 const draw = function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    drawBackground(player.position[0] * -0.2, backgroundImage2)
+
     const targetCameraX = canvas.width / 2 - player.position[0] * currentZoom;
-    const targetCameraY = canvas.height / 2 - player.position[1] * currentZoom;
+    // const targetCameraY = canvas.height / 2 - player.position[1] * currentZoom;
     cameraX += (targetCameraX - cameraX) * cameraSmoothness;
-    cameraY += (targetCameraY - cameraY) * cameraSmoothness;
+    // cameraY += (targetCameraY - cameraY) * cameraSmoothness;
     ctx.save();
     ctx.translate(cameraX, cameraY);
     ctx.scale(currentZoom, currentZoom);
-    world.draw(ctx);
+    world.draw({
+        ctx: ctx,
+        textureLoader: textureLoader,
+        floor: floorPattern,
+        player: player,
+        canvas: canvas,
+        stone: stonePattern
+    });
 
     ctx.restore();
     drawText("black", "14px Arial", "FPS: " + Math.round(fps), 10, 20, ctx);
@@ -167,7 +262,7 @@ const draw = function () {
 const update = function () {
     const accel = 0.0001;
     player.acceleration[0] = keys["ArrowLeft"] ? -accel : keys["ArrowRight"] ? accel : 0;
-    player.acceleration[1] = keys["ArrowUp"] ? -accel : keys["ArrowDown"] ? accel : 0;
+    player.acceleration[1] = keys["ArrowUp"] ? -accel : keys["ArrowDown"] ? accel : accel;
 
     if (keys["r"]) {
         player.position[0] = canvas.width / 2;

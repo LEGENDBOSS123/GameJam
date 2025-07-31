@@ -1,14 +1,28 @@
 export default class Box {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, patternName = "floor") {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.patternName = patternName;
     }
 
-    draw(ctx) {
-        ctx.fillStyle = "red";
+    draw(world, options) {
+        const ctx = options.ctx;
+
+        ctx.fillStyle = options[this.patternName];
         ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    drawLayer2(world, options) {
+        const ctx = options.ctx;
+
+        ctx.fillStyle = options[this.patternName];
+        ctx.globalAlpha = 0.4;
+        ctx.translate(this.x + (options.player.position[0] - this.x - this.width/2) * 0.035, 0);
+        ctx.fillRect(0, this.y - Math.min(10, this.height * 0.1), this.width, this.height);
+        ctx.translate(-(this.x + (options.player.position[0] - this.x - this.width/2) * 0.035),0);
+        ctx.globalAlpha = 1;
     }
 
     doCollisionWith(circle) {
@@ -24,10 +38,10 @@ export default class Box {
         if (distanceSquared > radiusSquared) {
             return false;
         }
-        
+
         if (distanceSquared === 0) {
             const overlap = circle.radius;
-            circle.position[1] = this.y - circle.radius; 
+            circle.position[1] = this.y - circle.radius;
             return true;
         }
 
@@ -44,21 +58,23 @@ export default class Box {
         return true;
     }
 
-    toJSON(){
+    toJSON() {
         return {
             x: this.x,
             y: this.y,
             width: this.width,
-            height: this.height
+            height: this.height,
+            patternName: this.patternName
         }
     }
 
-    static fromJSON(json){
+    static fromJSON(json) {
         return new Box(
             json.x,
             json.y,
             json.width,
-            json.height
+            json.height,
+            json.patternName
         )
     }
 }

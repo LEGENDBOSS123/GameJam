@@ -3,7 +3,7 @@ import Vector2 from "./Vector2.mjs"
 
 export default class Circle {
     static radius = 10;
-    constructor(position = [0, 0], isStatic = false, acceleration = [0, 0]) {
+    constructor(position = [0, 0], isStatic = false, acceleration = [0, 0], mass = 1) {
         this.position = position;
         this.lastPosition = [...position];
         this.acceleration = acceleration;
@@ -11,13 +11,14 @@ export default class Circle {
         this.isStatic = isStatic;
         this.changed = isStatic;
         this.radius = Circle.radius;
-        this.mass = 1;
+        this.mass = mass;
     }
 
-    draw(ctx) {
+    draw(world, options) {
+        const ctx = options.ctx;
         ctx.beginPath();
         ctx.arc(this.position[0], this.position[1], this.radius, 0, 2 * Math.PI);
-        ctx.fillStyle = "white";
+        ctx.fillStyle = "brown";
         ctx.fill();
     }
 
@@ -77,13 +78,15 @@ export default class Circle {
         return {
             position: this.position,
             isStatic: this.isStatic,
-            radius: this.radius
+            radius: this.radius,
+            id: this.id
         }
     }
 
     static fromJSON(json){
         const circle = new Circle(json.position, json.isStatic);
         circle.radius = json.radius;
+        circle.id = json.id;
         return circle;
     }
 

@@ -34,14 +34,23 @@ export default class World {
         else if (obj instanceof Stick) {
             this.sticks.push(obj);
         }
+        else if (obj instanceof Stick) {
+            this.sticks.push(obj);
+        }
+        else if (obj instanceof Stick) {
+            this.sticks.push(obj);
+        }
         else if (obj instanceof Box) {
             this.boxes.push(obj);
         }
     }
 
-    draw(ctx) {
-        for(let id in this.all){
-            this.all[id].draw(ctx, this);
+    draw(o) {
+        for (let id in this.all) {
+            this.all[id].drawLayer2?.(this, o);
+        }
+        for (let id in this.all) {
+            this.all[id].draw(this, o);
         }
     }
 
@@ -72,11 +81,11 @@ export default class World {
             this.staticHashMap.query(this.circles[i], this.addPair, this);
         }
 
-        for(let i = 0; i < this.boxes.length; i++){
-            for(let j = 0; j < this.circles.length;j++){
+        for (let i = 0; i < this.boxes.length; i++) {
+            for (let j = 0; j < this.circles.length; j++) {
                 const c = this.circles[j];
                 const b = this.boxes[i];
-                if(c.isStatic){
+                if (c.isStatic) {
                     continue;
                 }
                 this.addPair(c, b, this)
@@ -89,35 +98,43 @@ export default class World {
     }
 
 
-    toJSON(){
+    toJSON() {
         const json = {
             circles: [],
             sticks: [],
             boxes: []
         };
 
-        for(let i = 0; i < this.circles.length; i++){
+
+        for (let i = 0; i < this.circles.length; i++) {
             json.circles.push(this.circles[i].toJSON());
         }
-        for(let i = 0; i < this.sticks.length; i++){
+        for (let i = 0; i < this.sticks.length; i++) {
             json.sticks.push(this.sticks[i].toJSON());
         }
-        for(let i = 0; i < this.boxes.length; i++){
+        for (let i = 0; i < this.boxes.length; i++) {
             json.boxes.push(this.boxes[i].toJSON());
         }
 
         return json;
     }
 
-    parseJSON(json){
-        for(let i = 0; i < json.circles.length; i++){
-           this.add(Circle.fromJSON(json.circles[i]));
+    parseJSON(json) {
+
+        const all = {}
+        for (let i = 0; i < json.circles.length; i++) {
+            const circle = Circle.fromJSON(json.circles[i]);
+            all[circle.id] = circle;
+            this.add(circle);
         }
-        for(let i = 0; i < json.boxes.length; i++){
+        for (let i = 0; i < json.boxes.length; i++) {
             this.add(Box.fromJSON(json.boxes[i]));
         }
-        for(let i = 0; i < json.sticks.length; i++){
-            this.add(Stick.fromJSON(json.sticks[i]));
+        for (let i = 0; i < json.sticks.length; i++) {
+            const stick = Stick.fromJSON(json.sticks[i]);
+            stick.id1 = all[stick.id1].id;
+            stick.id2 = all[stick.id2].id;
+            this.add(stick);
         }
     }
 }
