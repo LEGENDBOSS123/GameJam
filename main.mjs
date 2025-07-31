@@ -88,7 +88,7 @@ canvas.addEventListener("click", function (event) {
             }
             for (let i = 0; i < circles.length - 1; i++) {
                 world.add(new Stick(circles[i].id, circles[i + 1].id,
-                    10//Math.sqrt(Vector2.magnitudeSquaredArray(Vector2.subtractArrays(circles[i].position, circles[i + 1].position)))
+                    25,//Math.sqrt(Vector2.magnitudeSquaredArray(Vector2.subtractArrays(circles[i].position, circles[i + 1].position)))
                 ));
             }
 
@@ -163,8 +163,9 @@ document.addEventListener('keyup', function (event) {
 
 
 
-let player = new Circle([canvas.width / 2, canvas.height / 2]);
+let player = new Circle([canvas.width / 2 + 0, canvas.height / 2]);
 player.mass = 2;
+player.isPlayer = true;
 const world = new World();
 
 top.world = world;
@@ -225,7 +226,7 @@ function drawBackground(xOffset, img) {
     let currentDrawX = drawX - imageWidth; // Start one image to the left for seamless wrapping
 
     while (currentDrawX < 800) {
-        ctx.drawImage(img, currentDrawX, 0, imageWidth+2, imageHeight);
+        ctx.drawImage(img, currentDrawX, 0, imageWidth + 2, imageHeight);
         currentDrawX += imageWidth;
     }
 
@@ -239,7 +240,7 @@ const draw = function () {
     drawBackground(player.position[0] * -0.2, backgroundImage2)
 
     const targetCameraX = canvas.width / 2 - player.position[0] * currentZoom;
-    // const targetCameraY = canvas.height / 2 - player.position[1] * currentZoom;
+    const targetCameraY = canvas.height / 2 - player.position[1] * currentZoom;
     cameraX += (targetCameraX - cameraX) * cameraSmoothness;
     // cameraY += (targetCameraY - cameraY) * cameraSmoothness;
     ctx.save();
@@ -262,18 +263,22 @@ const draw = function () {
 
 const update = function () {
     player.acceleration[1] = 0.0001;
-    if(keys["ArrowUp"] && player.canJump){
+    player.acceleration[0] = 0;
+
+    if (keys["ArrowUp"] && player.canJump) {
         player.canJump = false;
         player.position[1] -= 3;
     }
-    player.acceleration[0] = 0;
-    if(keys["ArrowRight"]){
-        if(player.position[0] - player.lastPosition[0] < 2){
+    if(keys["ArrowDown"]) {
+        player.acceleration[1] *= 2
+    }
+    if (keys["ArrowRight"]) {
+        if (player.position[0] - player.lastPosition[0] < 2) {
             player.acceleration[0] = 0.0001
         }
     }
-    if(keys["ArrowLeft"]){
-        if(player.position[0] - player.lastPosition[0] > -2){
+    if (keys["ArrowLeft"]) {
+        if (player.position[0] - player.lastPosition[0] > -2) {
             player.acceleration[0] = -0.0001
         }
     }

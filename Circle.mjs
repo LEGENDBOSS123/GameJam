@@ -2,7 +2,7 @@ import Box from "./Box.mjs";
 import Vector2 from "./Vector2.mjs"
 
 export default class Circle {
-    static radius = 10;
+    static radius = 12.5;
     constructor(position = [0, 0], isStatic = false, acceleration = [0, 0], mass = 1) {
         this.position = position;
         this.lastPosition = [...position];

@@ -34,12 +34,6 @@ export default class World {
         else if (obj instanceof Stick) {
             this.sticks.push(obj);
         }
-        else if (obj instanceof Stick) {
-            this.sticks.push(obj);
-        }
-        else if (obj instanceof Stick) {
-            this.sticks.push(obj);
-        }
         else if (obj instanceof Box) {
             this.boxes.push(obj);
         }
@@ -58,6 +52,12 @@ export default class World {
         this.hashmap.clear();
         for (let i = 0; i < this.circles.length; i++) {
             this.circles[i].step(deltaTime);
+        }
+        for (let i = 0; i < this.sticks.length; i++) {
+            this.sticks[i].step(this);
+        }
+        for (let i = 0; i < this.sticks.length; i++) {
+            this.sticks[i].step(this);
         }
         for (let i = 0; i < this.sticks.length; i++) {
             this.sticks[i].step(this);
@@ -107,6 +107,9 @@ export default class World {
 
 
         for (let i = 0; i < this.circles.length; i++) {
+            if(this.circles[i].isPlayer){
+                continue;
+            }
             json.circles.push(this.circles[i].toJSON());
         }
         for (let i = 0; i < this.sticks.length; i++) {
@@ -120,11 +123,16 @@ export default class World {
     }
 
     parseJSON(json) {
-
+        if(!json.circles){
+            return;
+        }
         const all = {}
         for (let i = 0; i < json.circles.length; i++) {
             const circle = Circle.fromJSON(json.circles[i]);
             all[circle.id] = circle;
+            if(!circle.isStatic){
+                circle.acceleration[1] = 0.0001
+            }
             this.add(circle);
         }
         for (let i = 0; i < json.boxes.length; i++) {

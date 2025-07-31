@@ -20,7 +20,7 @@ export default class Box {
         ctx.fillStyle = options[this.patternName];
         ctx.globalAlpha = 0.4;
         ctx.translate(this.x + (options.player.position[0] - this.x - this.width/2) * 0.035, 0);
-        ctx.fillRect(0, this.y - Math.min(10, this.height * 0.1), this.width, this.height);
+        ctx.fillRect(0, this.y - Math.min(10, this.height * 0.05), this.width, this.height);
         ctx.translate(-(this.x + (options.player.position[0] - this.x - this.width/2) * 0.035),0);
         ctx.globalAlpha = 1;
     }
